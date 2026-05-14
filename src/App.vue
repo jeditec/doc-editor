@@ -55,11 +55,6 @@
       v-model:show="showImportModal"
       @import="handleImport"
     />
-    <PasswordModal
-      v-model:show="showPasswordModal"
-      :title="passwordModalTitle"
-      @confirm="handlePasswordConfirm"
-    />
   </div>
 </template>
 
@@ -76,7 +71,6 @@ import CompareModal from './components/modals/CompareModal.vue'
 import VersionPreviewModal from './components/modals/VersionPreviewModal.vue'
 import ExportModal from './components/modals/ExportModal.vue'
 import ImportModal from './components/modals/ImportModal.vue'
-import PasswordModal from './components/modals/PasswordModal.vue'
 
 import { useDocuments } from './composables/useDocuments'
 import { useCategories } from './composables/useCategories'
@@ -112,9 +106,6 @@ const showCompareModal = ref(false)
 const showPreviewModal = ref(false)
 const showExportModal = ref(false)
 const showImportModal = ref(false)
-const showPasswordModal = ref(false)
-const passwordModalTitle = ref('')
-const passwordResolver = ref(null)
 const categoryExists = ref(false)
 
 const previewContent = ref('')
@@ -336,10 +327,15 @@ function handleSelectCompare(id) {
   handleCompare(id)
 }
 
-// --- Export/Import ---
+// --- Export/Import (password read from modal inputs directly) ---
 async function handleExport() {
-  const password = await promptForPassword('🔒 Export Password')
-  if (!password) return
+  const password = document.getElementById('exportPasswordInput')?.value
+  if (!password) {
+    const statusEl = document.getElementById('exportStatus')
+    statusEl.textContent = '❌ Password required'
+    statusEl.style.color = 'var(--danger)'
+    return
+  }
   const statusEl = document.getElementById('exportStatus')
   statusEl.textContent = '⏳ Preparing export...'
   statusEl.style.color = 'var(--accent)'
@@ -355,8 +351,19 @@ async function handleExport() {
 }
 
 async function handleImport(file) {
-  const password = await promptForPassword('🔓 Import Password')
-  if (!password) return
+  if (!file) {
+    const statusEl = document.getElementById('importStatus')
+    statusEl.textContent = '❌ No file selected'
+    statusEl.style.color = 'var(--danger)'
+    return
+  }
+  const password = document.getElementById('importPasswordInput')?.value
+  if (!password) {
+    const statusEl = document.getElementById('importStatus')
+    statusEl.textContent = '❌ Password required'
+    statusEl.style.color = 'var(--danger)'
+    return
+  }
   const statusEl = document.getElementById('importStatus')
   statusEl.textContent = '⏳ Decrypting and importing...'
   statusEl.style.color = 'var(--accent)'
@@ -373,23 +380,6 @@ async function handleImport(file) {
   }
 }
 
-async function promptForPassword(title) {
-  passwordModalTitle.value = title
-  document.getElementById('passwordInput').value = ''
-  showPasswordModal.value = true
-  return new Promise((resolve) => {
-    passwordResolver.value = resolve
-  })
-}
-
-function handlePasswordConfirm(password) {
-  if (passwordResolver.value) {
-    passwordResolver.value(password)
-    passwordResolver.value = null
-  }
-  showPasswordModal.value = false
-}
-
 // --- Keyboard Shortcuts ---
 function handleKeydown(e) {
   // Escape closes modals
@@ -401,10 +391,6 @@ function handleKeydown(e) {
     else if (showPreviewModal.value) showPreviewModal.value = false
     else if (showExportModal.value) showExportModal.value = false
     else if (showImportModal.value) showImportModal.value = false
-    else if (showPasswordModal.value) {
-      showPasswordModal.value = false
-      if (passwordResolver.value) { passwordResolver.value(null); passwordResolver.value = null }
-    }
   }
 
   // Ctrl+S = save
