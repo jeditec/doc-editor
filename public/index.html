@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Doc Editor</title>
   <style>
-    :root {
+    /* === Themes === */
+    
+    /* Tokyo Night */
+    [data-theme="tokyo-night"] {
       --bg: #1a1b26;
       --bg-sidebar: #16161e;
       --bg-hover: #24283b;
@@ -21,9 +24,196 @@
       --scrollbar: #292e42;
       --scrollbar-hover: #414868;
       --success: #9ece6a;
-      --radius: 8px;
-      --font: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', 'Consolas', monospace;
-      --sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    }
+    
+    /* Nord */
+    [data-theme="nord"] {
+      --bg: #2e3440;
+      --bg-sidebar: #2e3440;
+      --bg-hover: #3b4252;
+      --bg-active: #434c5e;
+      --bg-input: #3b4252;
+      --text: #d8dee9;
+      --text-dim: #4c566a;
+      --text-bright: #e5e9f0;
+      --accent: #88c0d0;
+      --accent-dim: #4c566a;
+      --danger: #bf616a;
+      --border: #434c5e;
+      --scrollbar: #434c5e;
+      --scrollbar-hover: #4c566a;
+      --success: #a3be8c;
+    }
+    
+    /* Dracula */
+    [data-theme="dracula"] {
+      --bg: #282a36;
+      --bg-sidebar: #282a36;
+      --bg-hover: #44475a;
+      --bg-active: #6272a4;
+      --bg-input: #44475a;
+      --text: #f8f8f2;
+      --text-dim: #6272a4;
+      --text-bright: #e5e9f0;
+      --accent: #bd93f9;
+      --accent-dim: #44475a;
+      --danger: #ff5555;
+      --border: #44475a;
+      --scrollbar: #44475a;
+      --scrollbar-hover: #6272a4;
+      --success: #50fa7b;
+    }
+    
+    /* Solarized Dark */
+    [data-theme="solarized-dark"] {
+      --bg: #002b36;
+      --bg-sidebar: #002b36;
+      --bg-hover: #073642;
+      --bg-active: #064f6a;
+      --bg-input: #073642;
+      --text: #839496;
+      --text-dim: #586e75;
+      --text-bright: #93a1a1;
+      --accent: #268bd2;
+      --accent-dim: #073642;
+      --danger: #dc322f;
+      --border: #073642;
+      --scrollbar: #073642;
+      --scrollbar-hover: #064f6a;
+      --success: #859900;
+    }
+    
+    /* Catppuccin Mocha */
+    [data-theme="catppuccin-mocha"] {
+      --bg: #1e1e2e;
+      --bg-sidebar: #181825;
+      --bg-hover: #313244;
+      --bg-active: #45475a;
+      --bg-input: #1e1e2e;
+      --text: #cdd6f4;
+      --text-dim: #6c7086;
+      --text-bright: #bac2de;
+      --accent: #89b4fa;
+      --accent-dim: #313244;
+      --danger: #f38ba8;
+      --border: #45475a;
+      --scrollbar: #45475a;
+      --scrollbar-hover: #585b70;
+      --success: #a6e3a1;
+    }
+    
+    /* One Dark */
+    [data-theme="one-dark"] {
+      --bg: #282c34;
+      --bg-sidebar: #21252b;
+      --bg-hover: #353b45;
+      --bg-active: #3e4451;
+      --bg-input: #282c34;
+      --text: #abb2bf;
+      --text-dim: #5c6370;
+      --text-bright: #e5e9f0;
+      --accent: #61afef;
+      --accent-dim: #3e4451;
+      --danger: #e06c75;
+      --border: #3e4451;
+      --scrollbar: #3e4451;
+      --scrollbar-hover: #5c6370;
+      --success: #98c379;
+    }
+    
+    /* Gruvbox Dark */
+    [data-theme="gruvbox-dark"] {
+      --bg: #282828;
+      --bg-sidebar: #282828;
+      --bg-hover: #3c3836;
+      --bg-active: #504945;
+      --bg-input: #32302f;
+      --text: #d5c4a1;
+      --text-dim: #7c6f64;
+      --text-bright: #ebdbb2;
+      --accent: #83a598;
+      --accent-dim: #3c3836;
+      --danger: #fb4934;
+      --border: #504945;
+      --scrollbar: #504945;
+      --scrollbar-hover: #665c54;
+      --success: #b8bb26;
+    }
+    
+    /* Monokai Pro */
+    [data-theme="monokai-pro"] {
+      --bg: #2d2a2e;
+      --bg-sidebar: #29262a;
+      --bg-hover: #403e41;
+      --bg-active: #524f52;
+      --bg-input: #2d2a2e;
+      --text: #fcfcfa;
+      --text-dim: #727072;
+      --text-bright: #e5e5e5;
+      --accent: #ff6188;
+      --accent-dim: #403e41;
+      --danger: #ff6188;
+      --border: #524f52;
+      --scrollbar: #524f52;
+      --scrollbar-hover: #727072;
+      --success: #a9dc76;
+    }
+    
+    /* Synthwave '84 */
+    [data-theme="synthwave"] {
+      --bg: #262335;
+      --bg-sidebar: #241b2f;
+      --bg-hover: #372d4c;
+      --bg-active: #4b3c6d;
+      --bg-input: #262335;
+      --text: #cacaec;
+      --text-dim: #685e7a;
+      --text-bright: #f28779;
+      --accent: #f97e72;
+      --accent-dim: #372d4c;
+      --danger: #f97e72;
+      --border: #4b3c6d;
+      --scrollbar: #4b3c6d;
+      --scrollbar-hover: #685e7a;
+      --success: #73fbb2;
+    }
+    
+    /* GitHub Dark */
+    [data-theme="github-dark"] {
+      --bg: #0d1117;
+      --bg-sidebar: #010409;
+      --bg-hover: #161b22;
+      --bg-active: #21262d;
+      --bg-input: #0d1117;
+      --text: #c9d1d9;
+      --text-dim: #484f58;
+      --text-bright: #e6edf3;
+      --accent: #58a6ff;
+      --accent-dim: #21262d;
+      --danger: #f85149;
+      --border: #21262d;
+      --scrollbar: #21262d;
+      --scrollbar-hover: #30363d;
+      --success: #3fb950;
+    }
+    
+    /* Oceanic Next */
+    [data-theme="oceanic-next"] {
+      --bg: #1b2b34;
+      --bg-sidebar: #16232a;
+      --bg-hover: #343d46;
+      --bg-active: #4f5b66;
+      --bg-input: #1b2b34;
+      --text: #d3c6aa;
+      --text-dim: #5f7e97;
+      --text-bright: #ecdfcf;
+      --accent: #6699cc;
+      --accent-dim: #343d46;
+      --danger: #ff6c6b;
+      --border: #343d46;
+      --scrollbar: #343d46;
+      --scrollbar-hover: #4f5b66;
+      --success: #99b2ff;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -244,7 +434,7 @@
     }
     .title-input::placeholder { color: var(--text-dim); }
 
-    .category-select {
+    .category-select, .theme-select {
       padding: 6px 10px;
       background: var(--bg-input);
       border: 1px solid var(--border);
@@ -254,7 +444,7 @@
       outline: none;
       cursor: pointer;
     }
-    .category-select:focus { border-color: var(--accent); }
+    .category-select:focus, .theme-select:focus { border-color: var(--accent); }
 
     .meta-info {
       font-size: 0.7rem;
@@ -454,6 +644,19 @@
               <option value="writing">Writing</option>
               <option value="other">Other</option>
             </select>
+            <select class="theme-select" id="themeSelect" onchange="changeTheme(this.value)">
+              <option value="tokyo-night">🌙 Tokyo Night</option>
+              <option value="nord">❄️ Nord</option>
+              <option value="dracula">🧛 Dracula</option>
+              <option value="solarized-dark">🌊 Solarized Dark</option>
+              <option value="catppuccin-mocha">☕ Catppuccin</option>
+              <option value="one-dark">⚛️ One Dark</option>
+              <option value="gruvbox-dark">🟧 Gruvbox</option>
+              <option value="monokai-pro">🎨 Monokai Pro</option>
+              <option value="synthwave">🌆 Synthwave</option>
+              <option value="github-dark">🐙 GitHub Dark</option>
+              <option value="oceanic-next">🌊 Oceanic Next</option>
+            </select>
           </div>
           <div class="toolbar-right">
             <span class="save-status" id="saveStatus">—</span>
@@ -488,6 +691,18 @@
     let activeCategory = 'all';
     let saveTimeout = null;
     let docIdCounter = 0;
+
+    // ---- Theme Management ----
+    function changeTheme(themeName) {
+      document.documentElement.setAttribute('data-theme', themeName);
+      localStorage.setItem('doc-editor-theme', themeName);
+    }
+
+    function initTheme() {
+      const saved = localStorage.getItem('doc-editor-theme') || 'tokyo-night';
+      document.documentElement.setAttribute('data-theme', saved);
+      document.getElementById('themeSelect').value = saved;
+    }
 
     // ---- Data ----
     async function fetchDocs() {
@@ -688,6 +903,7 @@
     });
 
     // ---- Init ----
+    initTheme();
     fetchDocs();
     fetchCategories();
   </script>
