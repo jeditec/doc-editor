@@ -3,11 +3,11 @@ services:
     build: .
     container_name: doc-editor
     ports:
-      - "3456:3456"
+      - "8040:8040"
     volumes:
       - doc-data:/app/data
     environment:
-      - PORT=3456
+      - PORT=8040
 
 volumes:
   doc-data:

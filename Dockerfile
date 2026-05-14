@@ -13,9 +13,9 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 
 # Expose port
-EXPOSE 3456
+EXPOSE 8040
 
 # Set environment
-ENV PORT=3456
+ENV PORT=8040
 
 CMD ["node", "server.js"]

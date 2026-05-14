@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = process.env.PORT || 3456;
+const PORT = process.env.PORT || 8040;
 
 // Setup database
 const dbDir = process.env.DOC_DB_DIR || path.join(__dirname, 'data');
