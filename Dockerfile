@@ -1,9 +1,11 @@
-FROM node:20-alpine
+FROM node:20-slim
 
 WORKDIR /app
 
-# Install system deps needed for better-sqlite3 native build
-RUN apk add --no-cache make g++ python3
+# Install build tools for better-sqlite3 native compilation
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install pnpm via corepack (stable v8)
 RUN corepack enable pnpm && corepack prepare pnpm@8.15.0 --activate
