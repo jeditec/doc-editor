@@ -1,6 +1,6 @@
 services:
   doc-editor:
-    image: ghcr.io/jeditec/doc-editor:latest
+    build: .
     container_name: doc-editor
     ports:
       - "8040:8040"

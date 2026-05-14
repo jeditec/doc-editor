@@ -1,28 +1,34 @@
-FROM node:24-slim
+FROM node:22-slim AS build
 
 WORKDIR /app
 
-# Install build tools for better-sqlite3 native compilation
+RUN corepack enable pnpm
+
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+COPY . .
+RUN pnpm run build
+
+FROM node:22-slim
+
+WORKDIR /app
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     python3 \
     && rm -rf /var/lib/apt/lists/* \
     && ln -s /usr/bin/python3 /usr/bin/python
 
-# Install pnpm via corepack (stable v8)
-RUN corepack enable pnpm && corepack prepare pnpm@8.15.0 --activate
+RUN corepack enable pnpm
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml .npmrc ./
+RUN pnpm install --frozen-lockfile --prod
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
-
+COPY --from=build /app/dist ./dist
 COPY . .
 
-# Expose port
 EXPOSE 8040
-
-# Set environment
 ENV PORT=8040
 
-CMD ["node", "server.js"]
+CMD ["node", "server.cjs"]
