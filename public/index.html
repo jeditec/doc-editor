@@ -627,7 +627,8 @@
       <div class="sidebar-actions">
         <button class="btn btn-accent" onclick="createDoc()">＋ New Doc</button>
         <div class="btn-flex">
-          <button class="btn btn-sm" onclick="exportDocs()">📦 Export</button>
+          <button class="btn btn-sm" onclick="exportEncryptedDocs()">📦 Export (Encrypted)</button>
+          <button class="btn btn-sm" onclick="exportPlainJson()">📄 Export (JSON)</button>
           <button class="btn btn-sm" onclick="importDocs()">📥 Import</button>
         </div>
       </div>
@@ -757,6 +758,7 @@
     let activeCategory = 'all';
     let saveTimeout = null;
     let docIdCounter = 0;
+    let pendingDeleteId = null;
 
     // ---- Theme Management ----
     function changeTheme(themeName) {
@@ -867,7 +869,7 @@
       return JSON.parse(dec.decode(decrypted));
     }
 
-    async function exportDocs() {
+    async function exportEncryptedDocs() {
       const password = prompt('Enter encryption password:');
       if (!password) return;
 
@@ -1010,23 +1012,29 @@
       saveTimeout = setTimeout(saveDoc, 1000);
     }
 
-    function deleteDoc() {
-      document.getElementById('deleteModal').classList.add('show');
-    }
-
     function closeDeleteModal() {
       document.getElementById('deleteModal').classList.remove('show');
     }
 
     async function confirmDelete() {
-      if (!currentDoc) return;
-      await quickDelete(currentDoc.id);
-      closeDeleteModal();
+      const id = pendingDeleteId || (currentDoc && currentDoc.id);
+      if (!id) return;
+
+      await fetch(`/api/documents/${id}`, { method: 'DELETE' });
+      pendingDeleteId = null;
+
+      if (currentDoc && currentDoc.id === id) {
+        currentDoc = null;
+        document.getElementById('editorContainer').style.display = 'none';
+        document.getElementById('welcome').style.display = 'flex';
+      }
+      await fetchDocs();
     }
 
     async function quickDelete(id) {
-      if (!confirm('Delete this document?')) return;
-      await fetch(`/api/documents/${id}`, { method: 'DELETE' });
+      pendingDeleteId = id;
+      document.getElementById('deleteModal').classList.add('show');
+    }
       if (currentDoc && currentDoc.id === id) {
         currentDoc = null;
         document.getElementById('editorContainer').style.display = 'none';
@@ -1045,7 +1053,7 @@
       document.getElementById('sidebar').classList.toggle('collapsed');
     }
 
-    async function exportDocs() {
+    async function exportPlainJson() {
       const res = await fetch('/api/export');
       const docs = await res.json();
       const blob = new Blob([JSON.stringify(docs, null, 2)], { type: 'application/json' });
