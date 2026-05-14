@@ -1,11 +1,14 @@
-FROM node:20-alpine AS build
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Install system deps needed for better-sqlite3 native build
+RUN apk add --no-cache make g++ python3
 
-COPY package.json package-lock.json ./
+# Install pnpm via corepack (stable v8)
+RUN corepack enable pnpm && corepack prepare pnpm@8.15.0 --activate
+
+COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
