@@ -263,6 +263,11 @@
       gap: 8px;
       flex-wrap: wrap;
     }
+    .sidebar-actions .btn-flex {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
 
     .btn {
       padding: 8px 14px;
@@ -332,11 +337,22 @@
       transition: all 0.15s;
       border: 1px solid transparent;
       margin-bottom: 4px;
+      position: relative;
     }
     .doc-item:hover { background: var(--bg-hover); }
     .doc-item.active {
       background: var(--bg-active);
       border-color: var(--accent);
+    }
+    .doc-item-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+    .doc-item-info {
+      flex: 1;
+      min-width: 0;
     }
     .doc-item-title {
       font-size: 0.88rem;
@@ -346,6 +362,25 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    .doc-item-delete {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: var(--danger);
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 4px 6px;
+      border-radius: 4px;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .doc-item:hover .doc-item-delete {
+      opacity: 1;
+    }
+    .doc-item-delete:hover {
+      background: var(--danger);
+      color: var(--bg);
     }
     .doc-item-meta {
       font-size: 0.7rem;
@@ -591,7 +626,10 @@
       </div>
       <div class="sidebar-actions">
         <button class="btn btn-accent" onclick="createDoc()">＋ New Doc</button>
-        <button class="btn btn-sm" onclick="exportDocs()">📦 Export</button>
+        <div class="btn-flex">
+          <button class="btn btn-sm" onclick="exportDocs()">📦 Export</button>
+          <button class="btn btn-sm" onclick="importDocs()">📥 Import</button>
+        </div>
       </div>
       <div class="category-filters" id="categoryFilters"></div>
       <div class="doc-list" id="docList"></div>
@@ -690,7 +728,6 @@
             <span class="meta-info" id="metaInfo"></span>
             <span class="char-count" id="charCount"></span>
             <button class="btn btn-sm" onclick="saveDoc()">💾 Save</button>
-            <button class="btn btn-sm btn-danger" onclick="deleteDoc()">🗑️</button>
           </div>
         </div>
         <div class="editor-area">
@@ -700,10 +737,10 @@
     </main>
   </div>
 
-  <!-- Confirm delete modal -->
+  <!-- Quick delete confirmation modal -->
   <div class="modal-overlay" id="deleteModal">
     <div class="modal">
-      <h3>Delete Document?</h3>
+      <h3>🗑️ Delete Document?</h3>
       <p style="color:var(--text-dim); font-size:0.85rem; margin-bottom:16px;">This action cannot be undone.</p>
       <div class="modal-actions">
         <button class="btn" onclick="closeDeleteModal()">Cancel</button>
@@ -711,6 +748,8 @@
       </div>
     </div>
   </div>
+
+  <!-- Hidden file input for import -->
 
   <script>
     let documents = [];
@@ -775,19 +814,128 @@
         const date = new Date(doc.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
         const isActive = currentDoc && currentDoc.id === doc.id;
         return `
-          <div class="doc-item ${isActive ? 'active' : ''}" onclick="openDoc(${doc.id})">
-            <div class="doc-item-title">${escapeHtml(doc.title)}</div>
-            <div class="doc-item-meta">
-              <span>${date}</span>
-              <span class="doc-item-cat">${escapeHtml(doc.category || 'general')}</span>
+          <div class="doc-item ${isActive ? 'active' : ''}">
+            <div class="doc-item-wrapper">
+              <div class="doc-item-info" onclick="openDoc(${doc.id})">
+                <div class="doc-item-title">${escapeHtml(doc.title)}</div>
+                <div class="doc-item-meta">
+                  <span>${date}</span>
+                  <span class="doc-item-cat">${escapeHtml(doc.category || 'general')}</span>
+                </div>
+                <div class="doc-item-preview">${escapeHtml(preview)}</div>
+              </div>
+              <button class="doc-item-delete" onclick="event.stopPropagation(); quickDelete(${doc.id})" title="Delete document">🗑️</button>
             </div>
-            <div class="doc-item-preview">${escapeHtml(preview)}</div>
           </div>
         `;
       }).join('');
     }
 
-    // ---- Actions ----
+    // ---- Encryption (AES-GCM + PBKDF2) ----
+    async function deriveKey(password, salt) {
+      const enc = new TextEncoder();
+      const keyMaterial = await crypto.subtle.importKey(
+        'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
+      );
+      return crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+        keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+      );
+    }
+
+    async function encryptData(data, password) {
+      const enc = new TextEncoder();
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const key = await deriveKey(password, salt);
+      const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(data)));
+      // Pack: salt(16) + iv(12) + ciphertext
+      const packed = new Uint8Array(salt.length + iv.length + encrypted.byteLength);
+      packed.set(salt, 0);
+      packed.set(iv, salt.length);
+      packed.set(new Uint8Array(encrypted), salt.length + iv.length);
+      return packed;
+    }
+
+    async function decryptData(packed, password) {
+      const salt = packed.slice(0, 16);
+      const iv = packed.slice(16, 28);
+      const data = packed.slice(28);
+      const key = await deriveKey(password, salt);
+      const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
+      const dec = new TextDecoder();
+      return JSON.parse(dec.decode(decrypted));
+    }
+
+    async function exportDocs() {
+      const password = prompt('Enter encryption password:');
+      if (!password) return;
+
+      const res = await fetch('/api/export');
+      const docs = await res.json();
+
+      try {
+        const encrypted = await encryptData(docs, password);
+        const blob = new Blob([encrypted], { type: 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `doc-editor-backup-${new Date().toISOString().split('T')[0]}.enc`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        alert('Export failed: ' + e.message);
+      }
+    }
+
+    async function importDocs() {
+      const password = prompt('Enter decryption password:');
+      if (!password) return;
+
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.enc,.json';
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+          const buffer = await file.arrayBuffer();
+          const packed = new Uint8Array(buffer);
+          let docs;
+
+          // Try to decrypt first (encrypted format)
+          try {
+            docs = await decryptData(packed, password);
+          } catch {
+            // If decryption fails, try reading as plain JSON
+            const text = new TextDecoder().decode(packed);
+            docs = JSON.parse(text);
+          }
+
+          // Import each document
+          for (const doc of docs) {
+            await fetch('/api/documents', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                title: doc.title || 'Imported Document',
+                content: doc.content || '',
+                category: doc.category || 'general'
+              })
+            });
+          }
+
+          await fetchDocs();
+          fetchCategories();
+          alert(`Imported ${docs.length} document(s)`);
+        } catch (err) {
+          alert('Import failed: wrong password or invalid file');
+        }
+      };
+      input.click();
+    }
+
     async function createDoc() {
       const res = await fetch('/api/documents', {
         method: 'POST',
@@ -872,11 +1020,18 @@
 
     async function confirmDelete() {
       if (!currentDoc) return;
-      await fetch(`/api/documents/${currentDoc.id}`, { method: 'DELETE' });
-      currentDoc = null;
-      document.getElementById('editorContainer').style.display = 'none';
-      document.getElementById('welcome').style.display = 'flex';
+      await quickDelete(currentDoc.id);
       closeDeleteModal();
+    }
+
+    async function quickDelete(id) {
+      if (!confirm('Delete this document?')) return;
+      await fetch(`/api/documents/${id}`, { method: 'DELETE' });
+      if (currentDoc && currentDoc.id === id) {
+        currentDoc = null;
+        document.getElementById('editorContainer').style.display = 'none';
+        document.getElementById('welcome').style.display = 'flex';
+      }
       await fetchDocs();
     }
 
