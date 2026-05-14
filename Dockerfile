@@ -5,7 +5,9 @@ WORKDIR /app
 # Install build tools for better-sqlite3 native compilation
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    && rm -rf /var/lib/apt/lists/*
+    python3 \
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -s /usr/bin/python3 /usr/bin/python
 
 # Install pnpm via corepack (stable v8)
 RUN corepack enable pnpm && corepack prepare pnpm@8.15.0 --activate
