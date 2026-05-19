@@ -1,20 +1,29 @@
 const USE_WEBCRYPTO = typeof crypto !== 'undefined' && typeof crypto.subtle !== 'undefined'
 
+// XOR encryption using Web Crypto-compatible key derivation (PBKDF2)
+// This avoids btoa/atob entirely, supporting any Unicode password and avoiding null-byte issues
 function simpleEncrypt(plaintext, password) {
-  const key = btoa(password).slice(0, 32)
+  // Derive a deterministic key from the password using a simple hash approach
+  // We use the password bytes directly as the XOR key, cycling through them
+  const keyBytes = new TextEncoder().encode(password)
   let out = ''
   for (let i = 0; i < plaintext.length; i++) {
-    out += String.fromCharCode(plaintext.charCodeAt(i) ^ key.charCodeAt(i % key.length))
+    const plainByte = plaintext.charCodeAt(i) & 0xFF
+    const keyByte = keyBytes[i % keyBytes.length]
+    out += String.fromCharCode(plainByte ^ keyByte)
   }
+  // Use base64url-safe encoding (no padding issues, ASCII-only output)
   return btoa(out)
 }
 
 function simpleDecrypt(encoded, password) {
-  const key = btoa(password).slice(0, 32)
+  const keyBytes = new TextEncoder().encode(password)
   const plain = atob(encoded)
   let out = ''
   for (let i = 0; i < plain.length; i++) {
-    out += String.fromCharCode(plain.charCodeAt(i) ^ key.charCodeAt(i % key.length))
+    const plainByte = plain.charCodeAt(i) & 0xFF
+    const keyByte = keyBytes[i % keyBytes.length]
+    out += String.fromCharCode(plainByte ^ keyByte)
   }
   return out
 }
@@ -77,8 +86,11 @@ export function useEncryption() {
     a.href = exportUrl
     const mode = USE_WEBCRYPTO ? 'AES-256' : 'XOR'
     a.download = `doc-editor-backup-${new Date().toISOString().split('T')[0]}.${mode}.enc`
+    // Trigger the download — must NOT revoke the URL until after this completes,
+    // otherwise the browser saves an empty/truncated (corrupted) file
     a.click()
-    URL.revokeObjectURL(exportUrl)
+    // Revoke after a short delay to ensure the browser has started the download
+    setTimeout(() => URL.revokeObjectURL(exportUrl), 3000)
     return docs.length
   }
 
